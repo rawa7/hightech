@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/order.dart';
+import '../models/user.dart';
 import '../services/order_service.dart';
+import '../services/user_service.dart';
 import 'order_detail_screen.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
@@ -30,9 +32,19 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     });
 
     try {
-      // For now, use a default user ID (you can implement user authentication later)
-      const int userId = 1;
-      final orders = await _orderService.getUserOrders(userId);
+      // Get the logged-in user
+      final User? currentUser = await UserService.getUser();
+      
+      if (currentUser == null) {
+        setState(() {
+          _errorMessage = 'Please log in to view your orders';
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      // Load orders for the logged-in user
+      final orders = await _orderService.getUserOrders(currentUser.id);
       
       setState(() {
         _orders = orders;

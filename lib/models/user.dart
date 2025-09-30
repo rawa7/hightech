@@ -5,6 +5,7 @@ class User {
   final String? phone;
   final int points;
   final String createdAt;
+  final String? apiToken;
 
   User({
     required this.id,
@@ -13,6 +14,7 @@ class User {
     this.phone,
     required this.points,
     required this.createdAt,
+    this.apiToken,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class User {
       phone: json['phone'],
       points: int.tryParse(json['points'].toString()) ?? 0,
       createdAt: json['created_at'] ?? '',
+      apiToken: json['api_token'],
     );
   }
 
@@ -34,6 +37,7 @@ class User {
       'phone': phone,
       'points': points,
       'created_at': createdAt,
+      'api_token': apiToken,
     };
   }
 }

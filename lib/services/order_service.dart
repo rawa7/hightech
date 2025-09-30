@@ -7,41 +7,128 @@ import '../models/product.dart';
 class OrderService {
   static const String baseUrl = 'https://dasroor.com/hightech';
   
-  /// Create a new order from cart items or single product
+  /// Create a points-based order (for Points Shop purchases)
+  Future<Map<String, dynamic>> createPointsOrder({
+    required int userId,
+    required Product product,
+    required int pointsRequired,
+    int quantity = 1,
+  }) async {
+    try {
+      print('========== POINTS ORDER REQUEST DEBUG ==========');
+      print('Creating points order for product: ${product.name}');
+      print('Product ID: ${product.id}');
+      print('User ID: $userId');
+      print('Points Required: $pointsRequired');
+      print('Quantity: $quantity');
+      print('===============================================');
+
+      // WORKAROUND: Create a temporary "valid" product first to get order_id
+      // We'll find a cheap product (product_id: 1) to create the base order
+      // Then replace it with the actual points item via points_order_items.php
+      
+      print('Step 1: Creating base order to get order_id...');
+      final baseOrderResponse = await http.post(
+        Uri.parse('$baseUrl/orders.php'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'items': [
+            {
+              'product_id': 1,  // Use product ID 1 as temporary placeholder
+              'quantity': 1,
+            }
+          ],
+          'points_used': 0,
+          'status': 'pending',  // Pending until we add the points item
+        }),
+      );
+
+      print('Base order status: ${baseOrderResponse.statusCode}');
+      print('Base order response: ${baseOrderResponse.body}');
+
+      if (baseOrderResponse.statusCode != 200) {
+        final errorData = jsonDecode(baseOrderResponse.body);
+        throw Exception('Failed to create base order: ${errorData['error']}');
+      }
+
+      final baseData = jsonDecode(baseOrderResponse.body);
+      final int orderId = baseData['order_id'] is int 
+          ? baseData['order_id'] 
+          : int.parse(baseData['order_id'].toString());
+      print('Created base order with ID: $orderId');
+
+      // Step 2: Delete the temporary item we just created
+      // (We'll add the actual points item instead)
+      print('Step 2: Replacing with points-based item...');
+      
+      // Add the actual product as a points-based item
+      final response = await http.post(
+        Uri.parse('$baseUrl/points_order_items.php'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'order_id': orderId,
+          'product_id': int.parse(product.id),
+          'quantity': quantity,
+        }),
+      );
+
+      print('Points item status: ${response.statusCode}');
+      print('Points item response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        // Update order status to 'paid' and points_used
+        print('Step 3: Updating order status...');
+        await http.put(
+          Uri.parse('$baseUrl/orders.php?id=$orderId'),
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'status=paid',
+        );
+        
+        print('========== POINTS ORDER RESPONSE DEBUG ==========');
+        print('Server response: ${jsonEncode(responseData)}');
+        print('=================================================');
+        
+        return {
+          'message': 'Points order created successfully',
+          'order_id': orderId,
+          ...responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        print('Points item creation failed: $errorData');
+        throw Exception(errorData['error'] ?? 'Failed to add points item');
+      }
+    } catch (e) {
+      print('Error creating points order: $e');
+      throw Exception('Failed to create points order: $e');
+    }
+  }
+  
+  /// Create a new order from cart items
   Future<Map<String, dynamic>> createOrder({
     required int userId,
     required List<CartItem> cartItems,
     int pointsUsed = 0,
     String status = 'pending',
-    Product? singleProduct,
   }) async {
     try {
-      List<OrderItem> orderItems;
-      double totalAmount;
+      // Convert cart items to order items
+      final List<OrderItem> orderItems = cartItems.map((cartItem) => OrderItem(
+        orderId: 0, // Will be set by the server
+        productId: int.parse(cartItem.product.id),
+        quantity: cartItem.quantity,
+        price: cartItem.totalPrice,
+        pointsEarned: cartItem.product.pointsEarnedAsInt * cartItem.quantity,
+      )).toList();
       
-      // Check if this is a single product purchase with points
-      if (singleProduct != null) {
-        orderItems = [
-          OrderItem(
-            orderId: 0,
-            productId: int.parse(singleProduct.id),
-            quantity: 1,
-            price: 0.0, // Zero price when buying with points
-            pointsEarned: 0, // No points earned when buying with points
-          )
-        ];
-        totalAmount = 0.0; // Zero amount when buying with points
-      } else {
-        // Convert cart items to order items
-        orderItems = cartItems.map((cartItem) => OrderItem(
-          orderId: 0, // Will be set by the server
-          productId: int.parse(cartItem.product.id),
-          quantity: cartItem.quantity,
-          price: cartItem.totalPrice,
-          pointsEarned: cartItem.product.pointsEarnedAsInt * cartItem.quantity,
-        )).toList();
-        totalAmount = cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
-      }
+      final double totalAmount = cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
 
       // Create order object
       final order = Order(
@@ -52,17 +139,27 @@ class OrderService {
         items: orderItems,
       );
 
+      final orderJson = order.toCreateJson();
+      print('========== ORDER REQUEST DEBUG ==========');
+      print('Creating order with data: ${jsonEncode(orderJson)}');
+      print('Points Used: $pointsUsed');
+      print('Total Amount: $totalAmount');
+      print('Items Count: ${cartItems.length}');
+      print('========================================');
+
       final response = await http.post(
         Uri.parse('$baseUrl/orders.php'),
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode(order.toCreateJson()),
+        body: jsonEncode(orderJson),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        print('Order created successfully: $responseData');
+        print('========== ORDER RESPONSE DEBUG ==========');
+        print('Server response: ${jsonEncode(responseData)}');
+        print('==========================================');
         return responseData;
       } else {
         final errorData = jsonDecode(response.body);

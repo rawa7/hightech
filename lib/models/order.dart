@@ -72,6 +72,7 @@ class Order {
   Map<String, dynamic> toCreateJson() {
     return {
       'user_id': userId,
+      'total_amount': totalAmount,
       'items': items?.map((item) => item.toCreateJson()).toList(),
       'points_used': pointsUsed,
       'status': status,
@@ -150,6 +151,8 @@ class OrderItem {
     return {
       'product_id': productId,
       'quantity': quantity,
+      'price': price,
+      'points_earned': pointsEarned,
     };
   }
 }

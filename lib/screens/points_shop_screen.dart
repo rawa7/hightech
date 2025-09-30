@@ -252,13 +252,13 @@ class _PointsShopScreenState extends State<PointsShopScreen> {
     );
 
     try {
-      // Create order with zero price but use points
-      final orderResponse = await _orderService.createOrder(
+      // Create order using points_order_items endpoint
+      // This endpoint automatically handles: price=0, points_earned=0, and points deduction
+      final orderResponse = await _orderService.createPointsOrder(
         userId: _currentUser!.id,
-        cartItems: [], // Empty cart since we're buying a single product
-        pointsUsed: pointsRequired,
-        status: 'paid', // Automatically paid since using points
-        singleProduct: product, // Pass single product
+        product: product,
+        pointsRequired: pointsRequired,
+        quantity: 1,
       );
 
       // Close loading dialog

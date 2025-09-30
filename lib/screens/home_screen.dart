@@ -1262,12 +1262,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     try {
-      // For now, use a default user ID (you can implement user authentication later)
-      const int userId = 1;
+      // Get the current logged-in user ID
+      if (_currentUser == null) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please log in to place an order'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
       
-      // Create order
+      // Create order with the logged-in user's ID
       final orderResponse = await _orderService.createOrder(
-        userId: userId,
+        userId: _currentUser!.id,
         cartItems: _cartService.cartItems,
         pointsUsed: 0, // You can implement points usage later
         status: 'pending',
