@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "669250940659",
+    "project_id": "hightech-bab87",
+    "storage_bucket": "hightech-bab87.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:669250940659:android:1e2e614d3ef3ca11631186",
+        "android_client_info": {
+          "package_name": "tech.high.golden.hightech"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbbf7rtbFo0R37xZbnHGsAHmJ7YUVQNQE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
