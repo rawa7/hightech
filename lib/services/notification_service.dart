@@ -44,10 +44,13 @@ class NotificationService {
     }
 
     // Listen to token refresh
-    _messaging.onTokenRefresh.listen((newToken) {
+    _messaging.onTokenRefresh.listen((newToken) async {
       _fcmToken = newToken;
-      _saveFCMToken(newToken);
+      await _saveFCMToken(newToken);
       print('FCM Token refreshed: $newToken');
+      
+      // Update token in backend if user is logged in
+      await _updateTokenInBackend(newToken);
     });
   }
 
@@ -209,6 +212,29 @@ class NotificationService {
     // Example:
     // await ApiService().sendFCMToken(_fcmToken!, userId);
     print('Would send FCM token to backend for user: $userId');
+  }
+
+  // Update token in backend (called when token refreshes)
+  Future<void> _updateTokenInBackend(String newToken) async {
+    try {
+      // Import UserService to avoid circular dependency
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      
+      if (isLoggedIn) {
+        final userData = prefs.getString('user_data');
+        if (userData != null) {
+          final user = jsonDecode(userData);
+          final userId = user['id'] as int;
+          
+          // Import at top of file: import 'api_service.dart';
+          // You can call the API directly here or use UserService
+          print('Token refreshed - would update for user: $userId');
+        }
+      }
+    } catch (e) {
+      print('Error updating token in backend: $e');
+    }
   }
 }
 

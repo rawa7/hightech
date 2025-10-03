@@ -135,7 +135,7 @@ function sendPushNotification($fcmToken, $title, $body, $data = [], $projectId, 
 
 // ==================== TEST NOTIFICATION ====================
 // Your FCM Token
-$fcmToken = 'ePm2XDf_RaG32VjbpIubjX:APA91bGV925vu7YCOFP1jmmL19CARI5F4EfR496k9XUFnzx6u9HPDp6OFkbQkm25rIM4A9QAzRZznWM-XyFimrVZoHiCd4prCKgzkm2sh7ycbl6HpoPR0JA';
+$fcmToken = 'fxXJSNCkROS_jrhPyYJFNC:APA91bHqnKTD7WDJ0DxicSDrc2A5VdiyCBjQZNuipTStSrdEgIaxkq2C0O0VnHMVsJIwdM2MUCzk5usZs9IlKRkmZPr1tVXgqUp99SENbJTxgtFl2pyId4M';
 
 // Send test notification
 $result = sendPushNotification(

@@ -6,6 +6,7 @@ import '../models/product.dart';
 class ApiService {
   static const String _baseUrl = 'https://dasroor.com/hightech/users.php';
   static const String _authUrl = 'https://dasroor.com/hightech/auth.php';
+  static const String _fcmTokenUrl = 'https://dasroor.com/hightech/api/fcm_token_api.php';
 
   static Future<Map<String, dynamic>> register({
     required String fullName,
@@ -114,6 +115,85 @@ class ApiService {
         }
       } else {
         return {'success': false, 'error': 'Failed to fetch products'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Network error: $e'};
+    }
+  }
+
+  // ==================== FCM TOKEN MANAGEMENT ====================
+  
+  /// Save or update FCM token for a user
+  static Future<Map<String, dynamic>> saveFCMToken({
+    required int userId,
+    required String fcmToken,
+    required String deviceType, // 'android', 'ios', or 'web'
+    String? deviceInfo,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_fcmTokenUrl?action=save'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'fcm_token': fcmToken,
+          'device_type': deviceType,
+          'device_info': deviceInfo,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'success': false, 'error': data['message'] ?? 'Failed to save FCM token'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Network error: $e'};
+    }
+  }
+
+  /// Delete FCM token (on logout)
+  static Future<Map<String, dynamic>> deleteFCMToken(String fcmToken) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_fcmTokenUrl?action=delete'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'fcm_token': fcmToken,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'success': false, 'error': data['message'] ?? 'Failed to delete FCM token'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Network error: $e'};
+    }
+  }
+
+  /// Delete all FCM tokens for a user (complete logout from all devices)
+  static Future<Map<String, dynamic>> deleteAllUserTokens(int userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_fcmTokenUrl?action=delete_by_user'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'success': false, 'error': data['message'] ?? 'Failed to delete user tokens'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Network error: $e'};

@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -13,14 +15,28 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  await Firebase.initializeApp();
-  
-  // Set up background message handler
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  
-  // Initialize notification service
-  await NotificationService().initialize();
+  try {
+    // Initialize Firebase differently for iOS and Android
+    if (Platform.isIOS) {
+      // On iOS, Firebase is already initialized in AppDelegate.swift
+      // We just need to ensure it's ready in Flutter
+      await Firebase.initializeApp();
+    } else {
+      // On Android, initialize with options
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+    
+    // Set up background message handler
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    
+    // Initialize notification service
+    await NotificationService().initialize();
+  } catch (e) {
+    print('Firebase initialization error: $e');
+    // Continue running the app even if Firebase fails
+  }
   
   runApp(const HighTechApp());
 }
