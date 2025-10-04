@@ -57,7 +57,9 @@ class UserService {
       final fcmToken = NotificationService().fcmToken;
       
       if (fcmToken == null) {
-        print('No FCM token available yet');
+        print('⚠️ No FCM token available yet');
+        print('   → This is expected on emulators without Google Play Services');
+        print('   → Notifications will work on real devices');
         return;
       }
 

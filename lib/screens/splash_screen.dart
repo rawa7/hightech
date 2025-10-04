@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
+import '../models/user.dart';
+import 'admin_dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,7 +25,20 @@ class _SplashScreenState extends State<SplashScreen> {
     
     if (mounted) {
       if (isLoggedIn) {
-        Navigator.pushReplacementNamed(context, '/home');
+        // Check if user is admin
+        final User? user = await UserService.getUser();
+        if (user != null && user.id.toString() == '1') {
+          // Admin user - go to admin dashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminDashboardScreen(),
+            ),
+          );
+        } else {
+          // Regular user - go to home
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       } else {
         Navigator.pushReplacementNamed(context, '/login');
       }
@@ -39,11 +54,12 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 140,
+              height: 140,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(60),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),
@@ -52,10 +68,9 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.smartphone,
-                size: 60,
-                color: Color(0xFF316AE9),
+              child: Image.asset(
+                'assets/logo.png',
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 30),

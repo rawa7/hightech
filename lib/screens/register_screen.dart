@@ -91,17 +91,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: 100,
+                      height: 100,
+                      padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF316AE9),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: const Icon(
-                        Icons.smartphone,
-                        size: 40,
                         color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
+                      child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                     ),
                     const SizedBox(height: 20),
                     const Text(

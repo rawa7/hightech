@@ -8,6 +8,8 @@ class OrderService {
   static const String baseUrl = 'https://dasroor.com/hightech';
   
   /// Create a points-based order (for Points Shop purchases)
+  /// 
+  /// This uses the new simplified API that creates the order and item in ONE call
   Future<Map<String, dynamic>> createPointsOrder({
     required int userId,
     required Product product,
@@ -15,98 +17,96 @@ class OrderService {
     int quantity = 1,
   }) async {
     try {
-      print('========== POINTS ORDER REQUEST DEBUG ==========');
-      print('Creating points order for product: ${product.name}');
-      print('Product ID: ${product.id}');
-      print('User ID: $userId');
-      print('Points Required: $pointsRequired');
-      print('Quantity: $quantity');
-      print('===============================================');
+      print('');
+      print('╔════════════════════════════════════════════════════════════════');
+      print('║ POINTS ORDER REQUEST - DETAILED DEBUG');
+      print('╠════════════════════════════════════════════════════════════════');
+      print('║ Creating points order for product: ${product.name}');
+      print('║ Product ID: ${product.id}');
+      print('║ User ID: $userId');
+      print('║ Points Required: $pointsRequired');
+      print('║ Quantity: $quantity');
+      print('╚════════════════════════════════════════════════════════════════');
+      print('');
 
-      // WORKAROUND: Create a temporary "valid" product first to get order_id
-      // We'll find a cheap product (product_id: 1) to create the base order
-      // Then replace it with the actual points item via points_order_items.php
+      // New simplified API - ONE call creates order AND item
+      print('┌─ SINGLE API CALL: Creating complete points order');
+      print('│');
       
-      print('Step 1: Creating base order to get order_id...');
-      final baseOrderResponse = await http.post(
-        Uri.parse('$baseUrl/orders.php'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'user_id': userId,
-          'items': [
-            {
-              'product_id': 1,  // Use product ID 1 as temporary placeholder
-              'quantity': 1,
-            }
-          ],
-          'points_used': 0,
-          'status': 'pending',  // Pending until we add the points item
-        }),
-      );
-
-      print('Base order status: ${baseOrderResponse.statusCode}');
-      print('Base order response: ${baseOrderResponse.body}');
-
-      if (baseOrderResponse.statusCode != 200) {
-        final errorData = jsonDecode(baseOrderResponse.body);
-        throw Exception('Failed to create base order: ${errorData['error']}');
-      }
-
-      final baseData = jsonDecode(baseOrderResponse.body);
-      final int orderId = baseData['order_id'] is int 
-          ? baseData['order_id'] 
-          : int.parse(baseData['order_id'].toString());
-      print('Created base order with ID: $orderId');
-
-      // Step 2: Delete the temporary item we just created
-      // (We'll add the actual points item instead)
-      print('Step 2: Replacing with points-based item...');
+      final pointsOrderUrl = '$baseUrl/points_order_items.php';
+      final requestData = {
+        'user_id': userId,
+        'product_id': int.parse(product.id),
+        'quantity': quantity,
+      };
       
-      // Add the actual product as a points-based item
+      print('│  📍 REQUEST URL: $pointsOrderUrl');
+      print('│  📤 REQUEST METHOD: POST');
+      print('│  📋 REQUEST HEADERS: {"Content-Type": "application/json"}');
+      print('│  📦 REQUEST BODY:');
+      print('│     ${jsonEncode(requestData)}');
+      print('│');
+      print('│  ℹ️  This single call will:');
+      print('│     1. Validate product and user points');
+      print('│     2. Create order (total_amount = 0)');
+      print('│     3. Add order item (price = 0)');
+      print('│     4. Deduct points from user');
+      print('│     5. Create points history record');
+      print('│');
+      
       final response = await http.post(
-        Uri.parse('$baseUrl/points_order_items.php'),
+        Uri.parse(pointsOrderUrl),
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'order_id': orderId,
-          'product_id': int.parse(product.id),
-          'quantity': quantity,
-        }),
+        body: jsonEncode(requestData),
       );
 
-      print('Points item status: ${response.statusCode}');
-      print('Points item response: ${response.body}');
+      print('│  📥 RESPONSE STATUS: ${response.statusCode}');
+      print('│  📥 RESPONSE BODY:');
+      print('│     ${response.body}');
+      print('└─ END API CALL');
+      print('');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         
-        // Update order status to 'paid' and points_used
-        print('Step 3: Updating order status...');
-        await http.put(
-          Uri.parse('$baseUrl/orders.php?id=$orderId'),
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: 'status=paid',
-        );
+        print('╔════════════════════════════════════════════════════════════════');
+        print('║ ✅ POINTS ORDER CREATED SUCCESSFULLY');
+        print('╠════════════════════════════════════════════════════════════════');
+        print('║ Order ID: ${responseData['order_id']}');
+        print('║ Item ID: ${responseData['item_id']}');
+        print('║ Product: ${product.name} (ID: ${product.id})');
+        print('║ Points Spent: ${responseData['points_spent']}');
+        print('║ Price: ${responseData['price']} (should be 0)');
+        print('║ Points Earned: ${responseData['points_earned']} (should be 0)');
+        print('║ Message: ${responseData['message']}');
+        print('╚════════════════════════════════════════════════════════════════');
+        print('');
         
-        print('========== POINTS ORDER RESPONSE DEBUG ==========');
-        print('Server response: ${jsonEncode(responseData)}');
-        print('=================================================');
-        
-        return {
-          'message': 'Points order created successfully',
-          'order_id': orderId,
-          ...responseData,
-        };
+        return responseData;
       } else {
         final errorData = jsonDecode(response.body);
-        print('Points item creation failed: $errorData');
-        throw Exception(errorData['error'] ?? 'Failed to add points item');
+        print('❌ ERROR: Points order creation failed!');
+        print('   Status Code: ${response.statusCode}');
+        print('   Error Details: ${errorData['error']}');
+        print('');
+        print('   Possible reasons:');
+        print('   • Missing required parameters (user_id, product_id, quantity)');
+        print('   • Product not available for points purchase');
+        print('   • Insufficient stock');
+        print('   • Insufficient points');
+        print('');
+        throw Exception(errorData['error'] ?? 'Failed to create points order');
       }
     } catch (e) {
-      print('Error creating points order: $e');
+      print('');
+      print('╔════════════════════════════════════════════════════════════════');
+      print('║ ❌ POINTS ORDER CREATION FAILED');
+      print('╠════════════════════════════════════════════════════════════════');
+      print('║ Error: $e');
+      print('╚════════════════════════════════════════════════════════════════');
+      print('');
       throw Exception('Failed to create points order: $e');
     }
   }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
@@ -252,6 +253,21 @@ class _PointsShopScreenState extends State<PointsShopScreen> {
     );
 
     try {
+      print('');
+      print('╔════════════════════════════════════════════════════════════════');
+      print('║ POINTS SHOP - BUY BUTTON CLICKED');
+      print('╠════════════════════════════════════════════════════════════════');
+      print('║ Screen: PointsShopScreen (points_shop_screen.dart)');
+      print('║ Method: _buyWithPoints()');
+      print('║ Product: ${product.name}');
+      print('║ Product ID: ${product.id}');
+      print('║ User ID: ${_currentUser!.id}');
+      print('║ Points Required: $pointsRequired');
+      print('║ User Current Points: $_userPoints');
+      print('║ Will Call: OrderService.createPointsOrder()');
+      print('╚════════════════════════════════════════════════════════════════');
+      print('');
+      
       // Create order using points_order_items endpoint
       // This endpoint automatically handles: price=0, points_earned=0, and points deduction
       final orderResponse = await _orderService.createPointsOrder(
@@ -263,6 +279,15 @@ class _PointsShopScreenState extends State<PointsShopScreen> {
 
       // Close loading dialog
       Navigator.of(context).pop();
+
+      print('');
+      print('╔════════════════════════════════════════════════════════════════');
+      print('║ ✅ POINTS SHOP - ORDER SUCCESSFUL');
+      print('╠════════════════════════════════════════════════════════════════');
+      print('║ Order Response: ${jsonEncode(orderResponse)}');
+      print('║ Reloading user data to refresh points balance...');
+      print('╚════════════════════════════════════════════════════════════════');
+      print('');
 
       // Reload data to refresh points balance
       await _loadData();
@@ -308,7 +333,7 @@ class _PointsShopScreenState extends State<PointsShopScreen> {
                       children: [
                         const Text('New balance:'),
                         Text(
-                          '${_userPoints - pointsRequired} pts',
+                          '$_userPoints pts',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -330,6 +355,15 @@ class _PointsShopScreenState extends State<PointsShopScreen> {
     } catch (e) {
       // Close loading dialog
       Navigator.of(context).pop();
+
+      print('');
+      print('╔════════════════════════════════════════════════════════════════');
+      print('║ ❌ POINTS SHOP - ORDER FAILED');
+      print('╠════════════════════════════════════════════════════════════════');
+      print('║ Error: $e');
+      print('║ Will show error message to user');
+      print('╚════════════════════════════════════════════════════════════════');
+      print('');
 
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(

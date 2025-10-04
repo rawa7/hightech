@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/user_service.dart';
+import '../models/user.dart';
+import 'admin_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,9 +42,23 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (result['success']) {
-      await UserService.saveUser(result['user']);
+      final User user = result['user'];
+      await UserService.saveUser(user);
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        // Check if user is admin (user_id = 1)
+        final userId = user.id.toString();
+        if (userId == '1') {
+          // Admin user - go to admin dashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminDashboardScreen(),
+            ),
+          );
+        } else {
+          // Regular user - go to home
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } else {
       if (mounted) {
@@ -83,16 +99,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: 100,
+                      height: 100,
+                      padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF316AE9),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: const Icon(
-                        Icons.smartphone,
-                        size: 40,
                         color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/logo.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 20),

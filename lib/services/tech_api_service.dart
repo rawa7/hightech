@@ -5,9 +5,41 @@ import '../models/banner.dart' as banner_model;
 import '../models/product.dart';
 import '../models/brand.dart';
 import '../models/product_type.dart';
+import '../models/category.dart' as category_model;
+import '../models/home_data.dart';
 
 class TechApiService {
   static const String _baseUrl = 'https://dasroor.com/hightech';
+
+  // Get home page data (all sections)
+  static Future<HomeData?> getHomeData() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/home.php'));
+      
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return HomeData.fromJson(data);
+      }
+    } catch (e) {
+      debugPrint('Error fetching home data: $e');
+    }
+    return null;
+  }
+
+  // Get all categories
+  static Future<List<category_model.Category>> getCategories() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/categories.php'));
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => category_model.Category.fromJson(json)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetching categories: $e');
+    }
+    return [];
+  }
 
   // Get active banners
   static Future<List<banner_model.Banner>> getBanners({bool activeOnly = true}) async {

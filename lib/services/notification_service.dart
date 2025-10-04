@@ -112,11 +112,37 @@ class NotificationService {
       _fcmToken = await _messaging.getToken();
       if (_fcmToken != null) {
         await _saveFCMToken(_fcmToken!);
-        print('FCM Token: $_fcmToken');
-        // TODO: Send this token to your backend server
+        print('✅ FCM Token obtained: $_fcmToken');
+      } else {
+        print('⚠️ FCM Token is null - possible reasons:');
+        print('   1. Google Play Services not available (emulator issue)');
+        print('   2. No internet connection');
+        print('   3. Firebase not properly configured');
+        print('   → Try using a real device or an emulator with Google Play');
+        
+        // Retry after a delay
+        _retryGetToken();
       }
     } catch (e) {
-      print('Error getting FCM token: $e');
+      print('❌ Error getting FCM token: $e');
+      print('   → Make sure you are using an emulator with Google Play Services');
+      _retryGetToken();
+    }
+  }
+
+  // Retry getting FCM token after a delay
+  Future<void> _retryGetToken() async {
+    await Future.delayed(const Duration(seconds: 5));
+    try {
+      final token = await _messaging.getToken();
+      if (token != null) {
+        _fcmToken = token;
+        await _saveFCMToken(token);
+        print('✅ FCM Token obtained on retry: $token');
+        await _updateTokenInBackend(token);
+      }
+    } catch (e) {
+      print('Retry failed: $e');
     }
   }
 

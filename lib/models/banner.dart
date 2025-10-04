@@ -5,8 +5,7 @@ class Banner {
   final String? link;
   final String status;
   final String createdAt;
-  final String? webPath;
-  final String? filename;
+  final BannerImageData? imageData;
 
   Banner({
     required this.id,
@@ -15,8 +14,7 @@ class Banner {
     this.link,
     required this.status,
     required this.createdAt,
-    this.webPath,
-    this.filename,
+    this.imageData,
   });
 
   factory Banner.fromJson(Map<String, dynamic> json) {
@@ -27,16 +25,61 @@ class Banner {
       link: json['link'],
       status: json['status'] ?? 'active',
       createdAt: json['created_at'] ?? '',
-      webPath: json['web_path'],
-      filename: json['filename'],
+      imageData: json['image_data'] != null
+          ? BannerImageData.fromJson(json['image_data'])
+          : null,
     );
   }
 
   String get imageUrl {
-    if (webPath != null) {
-      // Convert the relative path to absolute URL
-      return 'https://dasroor.com/hightech/${webPath!.replaceAll('..\\/', '').replaceAll('../', '')}';
+    // First try image_data (recommended structure)
+    if (imageData?.webPath != null) {
+      String path = imageData!.webPath;
+      // If path already starts with http, return as is
+      if (path.startsWith('http')) {
+        return path;
+      }
+      // If path starts with /, prepend domain only
+      if (path.startsWith('/')) {
+        return 'https://dasroor.com$path';
+      }
+      // Otherwise add full base path
+      return 'https://dasroor.com/hightech/$path';
     }
+    
+    // Fallback: try to construct from image field
+    if (image.isNotEmpty) {
+      // If image field contains a number (file ID), construct path
+      if (int.tryParse(image) != null) {
+        return 'https://dasroor.com/hightech/images/$image.png';
+      }
+      // If it's already a path or URL
+      if (image.startsWith('http')) {
+        return image;
+      }
+      return 'https://dasroor.com/hightech/$image';
+    }
+    
     return '';
+  }
+}
+
+class BannerImageData {
+  final String id;
+  final String webPath;
+  final String filename;
+
+  BannerImageData({
+    required this.id,
+    required this.webPath,
+    required this.filename,
+  });
+
+  factory BannerImageData.fromJson(Map<String, dynamic> json) {
+    return BannerImageData(
+      id: json['id']?.toString() ?? '',
+      webPath: json['web_path']?.toString() ?? '',
+      filename: json['filename']?.toString() ?? '',
+    );
   }
 }
